@@ -1,12 +1,14 @@
 #Importing Libraries
+from datetime import datetime
 import math
 import streamlit as st
 import pickle
-import pandas
+import pandas as pd
 import numpy as np
 import requests
 import url
 import base64
+import json
 
 user_db = {}
 if 'user_db' not in st.session_state:
@@ -68,6 +70,18 @@ def login(username, password):
         print(f"User {username} logged in.")  # Debug line to confirm login
     else:
         st.error("Incorrect username or password")
+
+def save_to_csv(data):
+    with open('predicted_prices.csv', 'a+') as f:
+        if f.tell() == 0:
+            pd.DataFrame([data]).to_csv(f, index=False)
+        else:
+            pd.DataFrame([data]).to_csv(f, mode='a', index=False, header=False)
+
+# @st.cache_data 
+# def load_data():
+#     return pd.read_csv('predicted_prices.csv')
+
 
 def main_page():
 
@@ -183,6 +197,35 @@ def main_page():
             price = float(result['data'][1]['price'])  # Convert price to float
         final_price = price * 1.6  # Multiply by 1.6
         st.title(f"The Predicted Price of Laptop = Rs {final_price:.2f}")
+        chart_data = pd.DataFrame({"Value": [result["data"][1]["MAE"], result["data"][1]["R2 Score"]]}, index=["MAE", "R2 Score"])
+        st.bar_chart(chart_data)
+        
+        prediction_data = {
+        "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Company": company,
+        "CPU Brand": cpu,
+        "GPU Brand": gpu,
+        "HDD": hdd,
+        "IPS": ips,
+        "OS": os,
+        "RAM": ram,
+        "Resolution": resolution,
+        "Screen Size": screen_size,
+        "SSD": ssd,
+        "Touchscreen": touchscreen,
+        "Type": type,
+        "Weight": weight,
+        "Predicted Price": final_price,
+        "Mean Absolute Error": result["data"][1]["MAE"],
+        "R2 Score": result["data"][1]["R2 Score"]}
+        save_to_csv(prediction_data)
+
+        st.write("# Predicted Laptop Prices")
+        table = pd.read_csv("predicted_prices.csv")
+        st.write(table)
+
+
+   
 
     # Function to get image in base64
 def get_image_as_base64(path):

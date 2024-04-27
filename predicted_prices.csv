@@ -1,0 +1,3 @@
+Timestamp,Company,CPU Brand,GPU Brand,HDD,IPS,OS,RAM,Resolution,Screen Size,SSD,Touchscreen,Type,Weight,Predicted Price,Mean Absolute Error,R2 Score
+2024-04-27 22:19:08,Apple,Intel Core i5,Intel,0,0,Mac,8,1920x1080,0.05,0,0,Ultrabook,0.5,97678.31554114947,0.20129362744373844,0.7959413790877559
+2024-04-27 22:19:19,Apple,Intel Core i5,Nvidia,0,0,Mac,8,1920x1080,0.05,0,0,Ultrabook,0.5,97678.31554114947,0.20129362744373844,0.7959413790877559
