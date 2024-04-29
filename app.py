@@ -16,6 +16,25 @@ if 'user_db' not in st.session_state:
 
 st.set_page_config(page_title="Laptop Price Prediction", page_icon="💻", layout="wide")
 
+# Initialize session state keys
+if 'show_metrics' not in st.session_state:
+    st.session_state['show_metrics'] = False
+
+if 'show_prices' not in st.session_state:
+    st.session_state['show_prices'] = False
+
+if 'final_price' not in st.session_state:
+    st.session_state['final_price'] = None
+
+if 'mae_value' not in st.session_state:
+    st.session_state['mae_value'] = None
+
+if 'r2_value' not in st.session_state:
+    st.session_state['r2_value'] = None
+
+if 'prediction_data' not in st.session_state:
+    st.session_state['prediction_data'] = None
+
 
 # Define the login/signup page function
 def login_signup():
@@ -175,7 +194,7 @@ def main_page():
     #os input
     os=st.selectbox("OS Type",df["os"].unique())
 
-
+    prediction_data = None
     if st.button("Predict Price"):
         ppi = None
         if touchscreen=="Yes":
@@ -197,9 +216,15 @@ def main_page():
             price = float(result['data'][1]['price'])  # Convert price to float
         final_price = price * 1.6  # Multiply by 1.6
         st.title(f"The Predicted Price of Laptop = Rs {final_price:.2f}")
-        chart_data = pd.DataFrame({"Value": [result["data"][1]["MAE"], result["data"][1]["R2 Score"]]}, index=["MAE", "R2 Score"])
-        st.bar_chart(chart_data)
-        
+
+        # Store the final price and metrics in the session state after prediction
+        st.session_state['final_price'] = final_price
+        st.session_state['mae_value'] = result['data'][1]['MAE']
+        st.session_state['r2_value'] = result['data'][1]['R2 Score']
+        st.session_state['prediction_data'] = prediction_data
+
+   
+                        
         prediction_data = {
         "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "Company": company,
@@ -218,16 +243,47 @@ def main_page():
         "Predicted Price": final_price,
         "Mean Absolute Error": result["data"][1]["MAE"],
         "R2 Score": result["data"][1]["R2 Score"]}
+
+        st.session_state['prediction_data'] = prediction_data
+        # Conditional display of the prices
+        if st.session_state.get('show_prices', False):
+            st.write("# Predicted Laptop Prices")
+            table = pd.read_csv("predicted_prices.csv")
+            st.write(table) 
+
         save_to_csv(prediction_data)
 
+ # Buttons for showing the metrics and prices
+    if st.button("Show Model Performance Metrics"):
+        st.session_state['show_metrics'] = True
+
+    if st.button("Show Predicted Laptop Prices"):
+        st.session_state['show_prices'] = True  
+
+# Conditional display of the metrics
+    if st.session_state.get('show_metrics'):
+        mae_data = pd.DataFrame({"Value": [st.session_state['mae_value']]}, index=["MAE"])
+        r2_data = pd.DataFrame({"Value": [st.session_state['r2_value']]}, index=["R2 Score"])
+
+        st.subheader('Model Performance Metrics')
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.subheader("Mean Absolute Error (MAE)")
+            st.bar_chart(mae_data)
+
+        with col2:
+            st.subheader("R2 Score")
+            st.bar_chart(r2_data)  
+
+    if st.session_state.get('show_prices'):
+        # Display the predicted laptop prices
         st.write("# Predicted Laptop Prices")
         table = pd.read_csv("predicted_prices.csv")
-        st.write(table)
+        st.write(table)     
 
 
-   
-
-    # Function to get image in base64
+   # Function to get image in base64
 def get_image_as_base64(path):
     with open(path, "rb") as image_file:
         data = base64.b64encode(image_file.read()).decode()
