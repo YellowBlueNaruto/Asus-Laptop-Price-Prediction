@@ -103,7 +103,6 @@ def save_to_csv(data):
 
 from PIL import Image
 def main_page():
-
     def get_laptop_price(company,cpu,gpu,hdd,ips,os,ram,resolution,screen_size,ssd,touchscreen,type,weight):
         data = {
             "company": company,
@@ -265,21 +264,35 @@ def main_page():
     if st.button("Show Correlation Heatmap"):
         st.session_state['show_correlation'] = True 
 
-# Conditional displaying of the metrics
+   # Conditional displaying of the metrics
     if st.session_state.get('show_metrics'):
-        mae_data = pd.DataFrame({"Value": [st.session_state['mae_value']]}, index=["MAE"])
-        r2_data = pd.DataFrame({"Value": [st.session_state['r2_value']]}, index=["R2 Score"])
+        # Update the metrics_data DataFrame with the actual values
+        metrics_data = pd.DataFrame({
+            "Metrics": ["MAE", "R2"],
+            "Values": [st.session_state.get('mae_value', 0), st.session_state.get('r2_value', 0)]
+        })
 
-        st.subheader('Model Performance Metrics')
-        col1, col2 = st.columns(2)
+        # Creating a new figure and axis for the plot
+        fig, ax = plt.subplots(figsize=(3, 3))  # Adjust the figure size as needed
 
-        with col1:
-            st.subheader("Mean Absolute Error (MAE)")
-            st.bar_chart(mae_data)
+        # Plotting the bars with different styles
+        mae_bar = ax.bar(metrics_data["Metrics"][0], metrics_data["Values"][0], color='skyblue', label='MAE', hatch='//', width=0.3)
+        r2_bar = ax.bar(metrics_data["Metrics"][1], metrics_data["Values"][1], color='orange', label='R2 Score', hatch='..', width=0.3)
 
-        with col2:
-            st.subheader("R2 Score")
-            st.bar_chart(r2_data)  
+        # Customizing the plot
+        ax.set_ylabel('Scores')
+        ax.set_title('Model Performance Metrics (MAE & R2)')
+        ax.set_xticks(range(len(metrics_data["Metrics"])))  # Set the x-ticks positions
+        ax.set_xticklabels(metrics_data["Metrics"])  # Set the x-tick labels
+        ax.legend()
+
+         # Reducing padding and adjusting layout
+        plt.subplots_adjust(left=0.15, right=0.85, top=0.85, bottom=0.15)
+
+         # Displaying the plot in a smaller area of the Streamlit app
+        cols = st.columns([2, 4])  # This creates a 1:3 column ratio
+        with cols[0]:
+            st.pyplot(fig)
 
     if st.session_state.get('show_prices'):
         # Displaying the predicted laptop prices
