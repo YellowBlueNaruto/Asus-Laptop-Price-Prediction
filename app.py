@@ -2,6 +2,8 @@
 from datetime import datetime
 import math
 import streamlit as st
+import seaborn as sns
+import matplotlib.pyplot as plt
 import pickle
 import pandas as pd
 import numpy as np
@@ -16,7 +18,7 @@ if 'user_db' not in st.session_state:
 
 st.set_page_config(page_title="Laptop Price Prediction", page_icon="💻", layout="wide")
 
-# Initialize session state keys
+# Initializing session state keys
 if 'show_metrics' not in st.session_state:
     st.session_state['show_metrics'] = False
 
@@ -36,39 +38,40 @@ if 'prediction_data' not in st.session_state:
     st.session_state['prediction_data'] = None
 
 
-# Define the login/signup page function
+
+# Defining the login/signup page function
 def login_signup():
-    # Check if we are in signup mode
+    # Checking if we are in signup mode
     if 'signup_mode' not in st.session_state:
-        st.session_state['signup_mode'] = True  # Show signup by default
+        st.session_state['signup_mode'] = True  # Showing signup by default
 
     if st.session_state['signup_mode']:
-        # Display the signup form
+        # Displaying the signup form
         st.subheader("Signup")
         new_username = st.text_input("Create username", key="signup_name")
         new_password = st.text_input("Create password", type="password", key="signup_password")
         if st.button("Signup"):
             signup_success = signup(new_username, new_password)
             if signup_success:
-                # If signup is successful, switch to login mode
+                # If signup is successful, switching to login mode
                 st.session_state['signup_mode'] = False
 
-        # Add a button to switch to login
+        # Adding a button to switch to login
         if st.button("Switch to Login"):
             st.session_state['signup_mode'] = False
     else:
-        # Display the login form
+        # Displaying the login form
         st.subheader("Login")
         username = st.text_input("Enter username", key="login_name")
         password = st.text_input("Enter password", type="password", key="login_password")
         if st.button("Login"):
             login(username, password)
 
-        # Add a button to switch to signup
+        # Adding a button to switch to signup
         if st.button("Switch to Signup"):
             st.session_state['signup_mode'] = True
 
-# Adjust the signup function to return a success status
+# Adjusting the signup function to return a success status
 def signup(username, password):
     user_db = st.session_state['user_db']
     if username in user_db:
@@ -77,7 +80,7 @@ def signup(username, password):
     else:
         user_db[username] = password
         st.success("Signup successful!")
-        print("Current user database:", user_db)  # Debug line to print the user database
+        print("Current user database:", user_db)  # Debugging line to print the user database
         return True
     
 # Login function
@@ -86,7 +89,7 @@ def login(username, password):
     if username in user_db and user_db[username] == password:
         st.session_state['logged_in'] = True
         st.success("Login successful!")
-        print(f"User {username} logged in.")  # Debug line to confirm login
+        print(f"User {username} logged in.")  # Debugging line to confirm login
     else:
         st.error("Incorrect username or password")
 
@@ -97,11 +100,8 @@ def save_to_csv(data):
         else:
             pd.DataFrame([data]).to_csv(f, mode='a', index=False, header=False)
 
-# @st.cache_data 
-# def load_data():
-#     return pd.read_csv('predicted_prices.csv')
 
-
+from PIL import Image
 def main_page():
 
     def get_laptop_price(company,cpu,gpu,hdd,ips,os,ram,resolution,screen_size,ssd,touchscreen,type,weight):
@@ -131,12 +131,12 @@ def main_page():
 
     
     
-    #import model
+    #Importing model
     st.markdown("<h1 style='text-align: center;'>Laptop Price Prediction 💻</h1>", unsafe_allow_html=True)
     pipe=pickle.load(open("pipe.pkl","rb"))
     df=pickle.load(open("df.pkl","rb"))
 
-    # making 3 cols left_column, middle_column, right_column
+    # Making 3 cols left_column, middle_column, right_column
     left_column, middle_column, right_column = st.columns(3)
     with left_column:
     # brand input
@@ -150,7 +150,7 @@ def main_page():
         # Ram size
         ram = st.selectbox("Ram (in GB)", df["Ram"].unique())
 
-    # making 3 cols left_column, middle_column, right_column
+    # Making 3 cols left_column, middle_column, right_column
     left_column, middle_column, right_column = st.columns(3)
     with left_column:
         # Weight input
@@ -164,7 +164,7 @@ def main_page():
         # IPS display
         ips = st.selectbox("IPS Display", ["No", "Yes"])
 
-    # making 3 cols left_column, middle_column, right_column
+    # Making 3 cols left_column, middle_column, right_column
     left_column, middle_column, right_column = st.columns(3)
     with left_column:
         # screen size
@@ -177,7 +177,7 @@ def main_page():
         # cpu input
         cpu = st.selectbox("CPU Brand", df["Cpu brand"].unique())
 
-    # making 3 cols left_column, middle_column, right_column
+    # Making 3 cols left_column, middle_column, right_column
     left_column,  right_column = st.columns(2)
     with left_column:
         # hdd input
@@ -194,6 +194,7 @@ def main_page():
     #os input
     os=st.selectbox("OS Type",df["os"].unique())
 
+    price_placeholder = st.empty()
     prediction_data = None
     if st.button("Predict Price"):
         ppi = None
@@ -213,17 +214,18 @@ def main_page():
         
         result = get_laptop_price(company,cpu,gpu,hdd,ips,os,ram,resolution,screen_size,ssd,touchscreen,type,weight)
         if 'data' in result and len(result['data']) > 1:
-            price = float(result['data'][1]['price'])  # Convert price to float
-        final_price = price * 1.6  # Multiply by 1.6
-        st.title(f"The Predicted Price of Laptop = Rs {final_price:.2f}")
+            price = float(result['data'][1]['price'])  # Converting price to float
+        final_price = price * 1.6  # Multiplying by 1.6
+        if 'final_price' in st.session_state and st.session_state['final_price'] is not None:
+            price_placeholder.title(f"The Predicted Price of Laptop = Rs {st.session_state['final_price']:.2f}")
+        else:
+            price_placeholder.title("There seems to be some problem in providing input by the user.")
 
-        # Store the final price and metrics in the session state after prediction
+
+        # Storing the final price and metrics in the session state after prediction
         st.session_state['final_price'] = final_price
         st.session_state['mae_value'] = result['data'][1]['MAE']
-        st.session_state['r2_value'] = result['data'][1]['R2 Score']
-        st.session_state['prediction_data'] = prediction_data
-
-   
+        st.session_state['r2_value'] = result['data'][1]['R2 Score']   
                         
         prediction_data = {
         "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -245,7 +247,7 @@ def main_page():
         "R2 Score": result["data"][1]["R2 Score"]}
 
         st.session_state['prediction_data'] = prediction_data
-        # Conditional display of the prices
+        # Conditional displaying of the prices
         if st.session_state.get('show_prices', False):
             st.write("# Predicted Laptop Prices")
             table = pd.read_csv("predicted_prices.csv")
@@ -258,9 +260,12 @@ def main_page():
         st.session_state['show_metrics'] = True
 
     if st.button("Show Predicted Laptop Prices"):
-        st.session_state['show_prices'] = True  
+        st.session_state['show_prices'] = True 
 
-# Conditional display of the metrics
+    if st.button("Show Correlation Heatmap"):
+        st.session_state['show_correlation'] = True 
+
+# Conditional displaying of the metrics
     if st.session_state.get('show_metrics'):
         mae_data = pd.DataFrame({"Value": [st.session_state['mae_value']]}, index=["MAE"])
         r2_data = pd.DataFrame({"Value": [st.session_state['r2_value']]}, index=["R2 Score"])
@@ -277,11 +282,21 @@ def main_page():
             st.bar_chart(r2_data)  
 
     if st.session_state.get('show_prices'):
-        # Display the predicted laptop prices
+        # Displaying the predicted laptop prices
         st.write("# Predicted Laptop Prices")
         table = pd.read_csv("predicted_prices.csv")
-        st.write(table)     
+        st.write(table)   
 
+
+    # Displaying the saved heatmap image when the button is clicked
+    if st.session_state.get('show_correlation', False):
+        st.write("# Correlation Heatmap")
+        image_path = 'heatmap.png'  
+        image = Image.open(image_path)
+        st.image(image, caption='Correlation Heatmap', width=550)
+
+    if st.session_state['final_price']:
+        price_placeholder.title(f"The Predicted Price of Laptop = Rs {st.session_state['final_price']:.2f}")
 
    # Function to get image in base64
 def get_image_as_base64(path):
@@ -298,11 +313,10 @@ if not st.session_state['logged_in']:
     login_signup()
 else:
 
-# Since image is in the same directory as the script
     logo_base64 = get_image_as_base64("tulogo.png")
 
 
-# Prepare the header HTML with the base64 string for the image
+# Preparing the header HTML with the base64 string for the image
     header_html = f"""
     <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px;">
     <h2 style="margin: 0;">Bhaktapur Multiple Campus</h2>
